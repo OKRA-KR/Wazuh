@@ -1,0 +1,16 @@
+# 오프라인 이식용 이미지 tar (용량 큼, git에 넣지 않음)
+*.tar
+*.tar.gz
+*.tgz
+
+# 실제 호스트 설정 (예시 파일만 커밋, 실물은 각자 호스트에)
+.wslconfig
+
+# 클론된 wazuh-docker (setup.sh가 $HOME에 받음 — 혹시 여기 받아도 제외)
+wazuh-docker/
+single-node/config/wazuh_indexer_ssl_certs/
+
+# OS 부산물
+.DS_Store
+Thumbs.db
+desktop.ini

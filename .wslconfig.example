@@ -1,0 +1,12 @@
+# Windows 호스트의 %USERPROFILE%\.wslconfig 로 복사해서 쓴다 (C:\Users\<너>\.wslconfig)
+# 적용: 파일 저장 후 관리자/일반 PowerShell에서  wsl --shutdown  → 다음 실행 시 반영
+#
+# 핵심: memory 값은 "호스트 물리 RAM"이 아니라 "윈도우가 쓰고 남은 가용 RAM"에 맞춰라.
+#   - 예) 물리 15.7GB인데 윈도우가 ~8GB 사용 → 가용 ~7.7GB → memory 6~7GB 가 안전
+#   - 가용보다 크게 잡으면(예: 10GB) 호스트가 못 받쳐 WSL VM이 통째로 크래시한다 (실제로 당함)
+#   - swap을 넉넉히 두면 순간 스파이크 시 죽지 않고 디스크로 흘려 버틴다(안전판)
+
+[wsl2]
+memory=6GB
+processors=4
+swap=4GB

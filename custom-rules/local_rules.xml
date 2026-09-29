@@ -1,0 +1,43 @@
+<!-- Local rules -->
+<!-- Wazuh 랩 커스텀 룰 — 오탐 억제 + 중요이벤트 격상 예시 -->
+<!-- 적용: docker cp local_rules.xml single-node-wazuh.manager-1:/var/ossec/etc/rules/local_rules.xml && docker restart single-node-wazuh.manager-1 -->
+<!-- 검증: 컨테이너 안에서 /var/ossec/bin/wazuh-logtest -t -->
+
+<group name="local,syslog,sshd,">
+
+  <!-- 기본 예제(그대로 둠) -->
+  <rule id="100001" level="5">
+    <if_sid>5716</if_sid>
+    <srcip>1.1.1.1</srcip>
+    <description>sshd: authentication failed from IP 1.1.1.1.</description>
+    <group>authentication_failed,pci_dss_10.2.4,pci_dss_10.2.5,</group>
+  </rule>
+
+  <!-- [오탐 억제] 내부 점검/테스트 소스(127.0.0.1)의 SSH 인증 실패는 레벨 0 -->
+  <!-- 이유: 우리가 직접 돌린 테스트 트래픽 = 노이즈. 실제 외부 IP 공격은 5710으로 그대로 잡힘 -->
+  <rule id="100010" level="0">
+    <if_sid>5710</if_sid>
+    <srcip>127.0.0.1</srcip>
+    <description>Internal test source 127.0.0.1: SSH auth failure suppressed (tuning)</description>
+  </rule>
+
+  <!-- [중요이벤트 격상] root 계정 SSH 로그인 성공은 레벨 12(즉시 확인) -->
+  <!-- 이유: root 직접 로그인 성공은 정상 운영에선 드물고, 침해 시 치명적 -->
+  <rule id="100020" level="12">
+    <if_sid>5715</if_sid>
+    <field name="srcuser">^root$</field>
+    <description>root 계정 SSH 로그인 성공 - 즉시 확인 필요 (escalated)</description>
+    <mitre>
+      <id>T1078.003</id>
+    </mitre>
+  </rule>
+
+</group>
+
+<!--
+  튜닝 원리 메모 (면접용):
+  - 억제(100010): 조건을 좁혀(출처 IP) 정상/테스트 행위만 레벨0으로 → 미탐 없이 노이즈만 제거
+  - 격상(100020): 위험 신호는 오히려 레벨 상향 → 놓치면 안 되는 이벤트 강조
+  - 이 tune→test→refine 사이클 = OKRA의 "성립검증으로 오탐 거르기"와 동일한 사고방식
+  - frequency/timeframe 값을 조절하면 브루트포스 판정 민감도(오탐<->미탐 균형)를 바꿀 수 있음
+-->
