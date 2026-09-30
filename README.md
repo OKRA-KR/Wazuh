@@ -6,6 +6,8 @@
 - Wazuh 버전: **4.9.2** (single-node)
 - 작성 시점 기준 진행상황·함정·다음 단계까지 이 문서에 다 있다.
 
+> **2026-09-30 상태**: 원래 실습 PC를 더 못 씀 → 살아있던 랩은 접근 불가. **새 머신에선 §1 setup.sh로 재구축.** **금요일(10/2) 위메이드 면접이 최우선 → `docs/04-wemade-interview-prep.md` 참조.** Claude 세션 인수인계는 `HANDOFF.md`.
+
 ---
 
 ## 0. 지금 어디까지 했나 (진행상황)
@@ -17,9 +19,10 @@
 | 에이전트 등록 | ✅ 완료 | `kali-victim` (ID 001), Active |
 | SSH 브루트포스 탐지 확인 | ✅ 완료 | rule 5710→5758→2502, MITRE T1110, **journald 소스** |
 | Configuration Assessment(SCA) 이해 | ✅ 완료 | `unix_audit` 정책, 12h 주기, Pass 3/Fail 13 |
-| 룰 튜닝 (local_rules.xml 오탐 억제) | 🔧 진행중 | 억제룰 초안 `custom-rules/local_rules.xml`에 준비됨 |
+| 오탐 사례 발견 (postfix 노이즈) | ✅ 완료 | Email Collection 폭증=고장난 postfix(rule 3398) 노이즈. 면접 핵심 재료 |
+| 룰 튜닝 (local_rules.xml 오탐 억제) | 🔧 중단 | PC 교체로 편집 단계 중단. 억제룰 설계·초안은 `custom-rules/`·`HANDOFF §5` |
 | 웹 공격 탐지 (crAPI/juiceshop + OKRA 연계) | ⬜ 미착수 | §6 다음 단계 |
-| 면접 정리 | 🔧 진행중 | `docs/03-interview-notes.md` |
+| 면접 정리 | ✅ 완료 | `docs/04-wemade-interview-prep.md` (회사분석+예상질문+패착처방) |
 
 ---
 
@@ -77,7 +80,9 @@ wazuh-lab/
 └── docs/
     ├── 01-detection-concepts.md ← SIEM이 어떻게 탐지하는가 (파이프라인)
     ├── 02-agent-and-test.md     ← 에이전트 설치 + 공격→탐지 테스트 절차
-    └── 03-interview-notes.md    ← 면접 답변 스크립트/포인트
+    ├── 03-interview-notes.md    ← 면접 노트 초판 (Q&A)
+    ├── 04-wemade-interview-prep.md ← ★ 위메이드 면접 최종 대비 (회사분석+예상질문+패착처방)
+    └── 05-architecture-deep-dive.md ← 각 파이프라인 단계가 실제로 어디서 도나
 ```
 
 ---

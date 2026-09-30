@@ -4,9 +4,15 @@
 
 ---
 
+## ⚠️ 중요 (2026-09-30 갱신)
+
+- **원래 실습 PC를 더 못 씀.** 아래 §5의 살아있던 랩(에이전트 등록·알림 등)은 그 PC에 있었고 **접근 불가**. 재개하려면 **새 머신에서 `README.md`의 setup.sh로 재구축** 필요(configs·룰은 이 repo에 있음).
+- **최우선 = 금요일(2026-10-02) 위메이드 면접.** 대비 자료는 **`docs/04-wemade-interview-prep.md`**(회사 최근 보안사고 인텔 + 예상질문·키워드답안 + 요기요 패착 처방).
+- 로컬 자동 메모리는 옛 PC에만 있으니 **이 repo가 유일한 durable 인수인계**다.
+
 ## 0. 한 줄 요약
 
-위메이드 블루팀 면접(**2026-10-02 금**) 대비 Wazuh SIEM 실습랩. 스택·에이전트·SSH 브루트포스 탐지까지 완료. **다음 액션 = 룰 튜닝(오탐 억제) 재시험 Before/After**, 그 뒤 웹공격(OKRA) 탐지.
+위메이드 블루팀 면접(**2026-10-02 금**) 대비 Wazuh SIEM 실습랩. 스택·에이전트·SSH 브루트포스 탐지·SCA 이해·오탐(postfix 노이즈) 발견까지 완료. 룰 튜닝 편집 단계에서 PC 교체로 중단. **면접이 최우선 → `docs/04` 집중.** 랩 재개 시엔 룰 튜닝 재시험 → 웹공격(OKRA) 탐지.
 
 ## 1. 사용자 & 작업 스타일 (꼭 지킬 것)
 
@@ -60,7 +66,8 @@ MSYS_NO_PATHCONV=1 wsl --exec bash -lc 'TOKEN=$(curl -sk -u "wazuh-wui:MyS3cr37P
 - ✅ 에이전트 **ID 001 `kali-victim` Active** (`agent_control -l`로 확인). 127.0.0.1로 붙음.
 - ✅ SSH 브루트포스 탐지 확인: rule **5710→5758→2502**(level 10), **MITRE T1110**. 로그 소스는 **journald**(Kali에 auth.log 없음/rsyslog off — 정상).
 - ✅ SCA 이해: `unix_audit` 정책, interval 43200s(12h), scan_on_start, Pass3/Fail13. **SCA 강제재스캔 API 없음**(`/sca/{agent}`는 GET만) → 에이전트 재시작 또는 interval 축소로만 재스캔.
-- 🔧 룰 튜닝 진행중: `custom-rules/local_rules.xml`에 억제(100010: 127.0.0.1 실패 level0)+격상(100020: root SSH 성공 level12) 룰 준비됨. **사용자가 직접 편집 원함.**
+- ✅ **오탐 사례 발견**(면접 핵심 재료): SSH만 테스트했는데 대시보드 "Email Collection(T1114)"이 폭증(885건). 원인은 공격이 아니라 **고장난 postfix가 10초마다 뱉는 로그 노이즈**(rule **3398** "Illegal address", full_log=`mail_queue_enter ... No such file`)가 오분류된 것. → "많이 뜨는 알림 ≠ 위협, full_log 역추적" 교훈.
+- 🔧 룰 튜닝 진행중(PC교체로 중단): postfix 노이즈 억제룰 편집 시도했으나 **매니저 컨테이너에 vi/nano 없음** → 방법=`docker cp`로 넣거나 `cat >>` heredoc으로 append. 억제룰 설계: `<rule id="100030" level="0"><if_sid>3398</if_sid><match>mail_queue_enter</match></rule>` (노이즈만 콕 집어 억제, 진짜 스팸은 유지). SSH용 억제(100010: 127.0.0.1)+격상(100020: root 성공)은 `custom-rules/local_rules.xml`에 있음.
 
 ## 6. 다음 액션 (바로 이어서 할 것)
 
@@ -99,7 +106,20 @@ README §5에 8개 상세. 요점:
 
 ## 8. 관련 파일 / 메모리
 
-- 이 패키지: `security\wazuh-lab\` (README, setup.sh, compose/, custom-rules/, docs/×3)
-- 원본 가이드: `C:\Users\user\Downloads\Wazuh_SIEM_실습랩_구축가이드.md`
-- 자동 메모리: `proj-wazuh-siem-lab.md` (MEMORY.md 인덱스에 등재됨) — 이 랩의 상태·함정 요약. 세션 시작 시 참고.
-- 연관: OKRA SAST+DAST 프로젝트(`sast-dast-project` 메모리) — 오탐제거 논리 공유.
+- 이 repo(=유일한 durable 인수인계): `github.com/OKRA-KR/Wazuh`
+  - `README.md`(사람용 상태/재구축), `HANDOFF.md`(이 문서), `setup.sh`, `compose/`, `custom-rules/local_rules.xml`, `.wslconfig.example`
+  - `docs/01-detection-concepts.md`(탐지 파이프라인), `02-agent-and-test.md`(에이전트·공격 절차), `03-interview-notes.md`(면접 노트 초판), **`04-wemade-interview-prep.md`(면접 최종 대비, 최우선)**, `05-architecture-deep-dive.md`(각 단계 실행위치)
+- 원본 가이드(옛 PC): `C:\Users\user\Downloads\Wazuh_SIEM_실습랩_구축가이드.md`
+- 자동 메모리(옛 PC에만): `proj-wazuh-siem-lab.md`. 새 머신엔 없으니 이 repo로 대체.
+- 연관: OKRA SAST+DAST(`sast-dast-project`) — 성립검증=오탐제거 논리 공유(면접 핵심 연결).
+
+## 9. 이 세션에서 한 일 (작업 내역 / 근거)
+
+무엇을 했나 → 무엇에 기반했나:
+1. **환경 트러블슈팅** — 컨테이너 반복 재시작의 진짜 원인이 **WSL VM 메모리 크래시**임을 레이어별(데몬→컨테이너→dockerd→WSL→호스트RAM) 격리로 규명. 근거: `wsl -l -v`(Stopped), `docker inspect`(RestartCount/StartedAt), 커널 uptime 샘플링, `free -h`. 조치: `.wslconfig` 튜닝 + 좀비 vmmem은 재부팅 + 클린 재생성.
+2. **에이전트 부착** — kali 호스트에 wazuh-agent 설치(사용자가 sudo로), 매니저에 001 Active 확인.
+3. **SSH 브루트포스 탐지** — hydra(loopback) → alerts.json에서 rule 5710/5758/2502, T1110, `location:journald` 확인.
+4. **탐지 파이프라인/아키텍처 규명** — 각 단계 실행 위치를 실물 프로세스·포트·인덱스(`wazuh-alerts-4.x-<날짜>`)로 확인 → `docs/05`.
+5. **SCA 이해** — API로 `unix_audit` 정책·interval·Pass/Fail 확인, 강제재스캔 API 부재를 spec.yaml로 검증.
+6. **오탐 발견** — Email Collection 폭증이 postfix 노이즈(rule 3398)임을 alerts.json 집계로 규명.
+7. **면접 전략** — 요기요 3패착 + 위메이드 최근 보안사고(2026-07 WEMIX$ 77억, 4년 묵은 코드취약점, 망분리·키교체 대응) 웹조사 → `docs/04`로 정리.
